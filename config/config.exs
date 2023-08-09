@@ -21,3 +21,7 @@ config :dealz, Dealz.Mailer,
   auth: :if_available,
   tls_verify: :verify_none
 
+config :dealz, Dealz.Scheduler,
+  jobs: [
+    {"@hourly", { Dealz.Scheduler, :crawl }}
+  ]
