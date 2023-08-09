@@ -21,26 +21,52 @@ defmodule Dealz.TravelDealzSpider do
       response.body
       |> Floki.parse_document()
 
-    deals =
-      document
-      |> Floki.find("article a")
-      |> Enum.map(fn x -> Floki.attribute(x, "title") end) # i could move ve this to a funciton and create a map with the href and the title
-      |> Enum.filter(fn x -> contains_keywords?(Floki.text(x)) end)
-      |> Enum.uniq
-
-    IO.inspect(deals)
-
-
-    send_email(Enum.join(deals, "\n"))
+    deals = parse_deals(document)
 
     %Crawly.ParsedItem{
       :items => deals,
       :requests => []
     }
+
+    # move this to another place
+    formatted_deals = build_deals(deals)
+    Dealz.Email.send_email(formatted_deals)
+  end
+
+  def parse_deals(document) do
+    deals = find_deals(document)
+      |> build_deals
+      |> find_relevant_deals
+  end
+
+  def find_deals(document) do
+    document
+      |> Floki.find("article header a")
+      |> build_deals
+      |> find_relevant_deals
+      |> unique_deals
+  end
+
+  def build_deals(items) do
+    Enum.map(items, fn item ->
+      %{
+        href: hd(Floki.attribute(item, "href")),
+        title: hd(Floki.attribute(item, "title"))
+      }
+    end
+    )
+  end
+
+  def find_relevant_deals(deals) do
+    Enum.filter(deals, fn anchor -> contains_keywords?(anchor[:title]) end)
+  end
+
+  def unique_deals(deals) do
+    Enum.uniq_by(deals, fn anchor -> anchor[:href] end)
   end
 
   def contains_keywords?(string) do
-    keywords = ["Madrid", "Mexico", "Copenhagen", "Denmark", "Australia"]
+    keywords = ["Mexico", "Copenhagen", "Denmark", "Australia", "Cancun", "Melbourne"]
 
     matches =
       for k <- keywords do
@@ -50,24 +76,10 @@ defmodule Dealz.TravelDealzSpider do
     if Enum.member?(matches, true), do: true, else: false
   end
 
-  def send_email(dealz) do
-    # Create your email
-    email = Dealz.Email.dealz_email(dealz)
-
-    try do
-      Dealz.Mailer.deliver_now(email)
-    rescue
-      error in Bamboo.SMTPAdapter.SMTPError ->
-        case error.raw do
-          {:retries_exceeded, _} ->
-            IO.inspect("I can do some stuff when this error match")
-
-          _ ->
-            IO.inspect("I don't care about these ones")
-        end
-
-        # Here, I can re-raise the error
-        raise error
-    end
+  def build_email(deals) do
+    html =
+      for deal <- deals do
+        "<a href=#{deal[:href]}>#{deal[:title]}</a>"
+      end
   end
 end
