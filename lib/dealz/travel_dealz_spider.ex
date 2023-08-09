@@ -1,5 +1,4 @@
 defmodule Dealz.TravelDealzSpider do
-  import Dealz.Mailer
   use Crawly.Spider
 
   @impl Crawly.Spider
