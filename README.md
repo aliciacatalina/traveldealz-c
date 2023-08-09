@@ -1,6 +1,6 @@
 # DEALZ
 
-**TODO: Add description**
+Custom crawler and parser to watch for specific travel deals 😬
 
 ## Installation
 
