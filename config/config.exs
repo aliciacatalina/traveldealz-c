@@ -1,5 +1,7 @@
 import Config
 
+config :elixir, :time_zone_database, Tzdata.TimeZoneDatabase
+
 config :crawly,
   middlewares: [
     {Crawly.Middlewares.UserAgent,
@@ -23,5 +25,8 @@ config :dealz, Dealz.Mailer,
 
 config :dealz, Dealz.Scheduler,
   jobs: [
-    {"@hourly", { Dealz.Scheduler, :crawl }}
+    {"@daily", { Dealz.Scheduler, :crawl, [] }}
   ]
+
+config :logger,
+  level: :debug
