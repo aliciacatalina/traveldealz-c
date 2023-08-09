@@ -3,6 +3,7 @@ defmodule Dealz.Scheduler do
     otp_app: :dealz
 
   def crawl do
+    IO.inspect("starting the crawling")
     Crawly.Engine.start_spider(Dealz.TravelDealzSpider)
   end
 end
